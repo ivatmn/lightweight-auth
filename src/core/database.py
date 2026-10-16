@@ -49,22 +49,20 @@ def verify_password(password: str, password_hash: str) -> bool:
 # ==================== CONNECTION ====================
 
 
-@asynccontextmanager
 async def get_db() -> AsyncIterator[aiosqlite.Connection]:
-    """
-    Open a SQLite connection for the duration of the operation.
-
-    Usage:
-        async with get_db() as db:
-            async with db.execute("SELECT ...", (param,)) as cur:
-                row = await cur.fetchone()
-    """
-    db_file = Path(DB_PATH)
-    db_file.parent.mkdir(parents=True, exist_ok=True)
-
     db = await aiosqlite.connect(DB_PATH)
     db.row_factory = aiosqlite.Row
-    # Foreign keys are disabled by default in SQLite
+    await db.execute("PRAGMA foreign_keys = ON")
+    try:
+        yield db
+    finally:
+        await db.close()
+
+
+@asynccontextmanager
+async def open_db() -> AsyncIterator[aiosqlite.Connection]:
+    db = await aiosqlite.connect(DB_PATH)
+    db.row_factory = aiosqlite.Row
     await db.execute("PRAGMA foreign_keys = ON")
     try:
         yield db
@@ -103,7 +101,7 @@ async def seed_default_admin() -> None:
     admin_password = os.getenv("AUTH_ADMIN_PASSWORD", "admin")
     admin_username = os.getenv("AUTH_ADMIN_USERNAME", "admin")
 
-    async with get_db() as db:
+    async with open_db() as db:
         # Roles
         await db.execute(
             "INSERT OR IGNORE INTO roles (name, description) VALUES (?, ?)",

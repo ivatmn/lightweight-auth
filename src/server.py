@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-# from src.api.login_api import auth_router
+from src.api.login_api import router as auth_router
 from src.core.database import init_db, seed_default_admin
 
 
@@ -24,5 +24,5 @@ def create_app() -> FastAPI:
         description="Service for authentication and authorization of users",
         version="D-001.001.00",
     )
-    # app.include_router(auth_router)
+    app.include_router(auth_router)
     return app
