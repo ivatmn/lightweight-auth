@@ -1,67 +1,43 @@
-# lightweight-auth
+# lightweight-auth — SQLite
 
 **Lightweight auth & RBAC for PoC, small services, and agent auth.**
-Alternative to Keycloak when enterprise SSO is overkill.
+SQLite backend — zero setup, single file, no external services.
 
 ---
 
-## Why
+## Why SQLite
 
-Keycloak is powerful, but heavy: JVM, memory, realm config, SSO ceremony.
-Most projects — PoC, internal tools, small services, agent auth — don't need that.
-
-`lightweight-auth` gives you:
-- **Auth** — login, JWT in HttpOnly cookie, anti-brute-force, account lockout.
-- **RBAC** — roles, groups, `access_type` (region / program / mega_project / project).
-- **Agent auth** — API keys per user, Telegram OTP, no browser required.
-- **Minimal footprint** — FastAPI, one process, `docker compose up`.
-
-No realms. No admin console you have to learn. No JVM.
+- **Zero setup** — no external DB, no credentials, no migrations to run by hand.
+- **Single file** — `data/auth.db` lives next to the app. Backup = copy the file.
+- **Fast enough** — for PoC, internal tools, agent auth, small services.
+- **Read the whole auth flow in one evening** — no Keycloak, no realm config, no JVM.
 
 ---
 
-## Choose your backend
+## When to use this
 
-Both branches share the same API and architecture. Switch anytime.
+- PoC or demo that needs auth *today*.
+- Internal tool with one instance and a handful of users.
+- Agent auth — API keys, OTP, no browser.
+- You want to read the code, not configure it.
 
-| Branch | Use for | Setup |
-|---|---|---|
-| **[`sqlite`](link)** | PoC, internal tools, agent auth, small services | Zero — single file, `docker compose up` |
-| **[`postgres`](link)** | Real workloads, teams, multi-instance, concurrency | `docker compose up` with Postgres service |
+## When NOT to use this
 
-**Not sure?** Start with `sqlite`. Migrate to `postgres` when you hit concurrency or multi-instance limits.
-
----
-
-## When to use
-
-- You need auth for a PoC or internal tool, not enterprise SSO.
-- You're building agent auth — API keys, OTP, no browser.
-- You want RBAC without deploying Keycloak.
-- You want to read the whole auth flow in one evening.
-
-## When NOT to use
-
-- Enterprise SSO (SAML, OIDC federation, multi-tenant).
-- Compliance-heavy environments (SOC2, HIPAA) — you'll need audit and policy layers.
-- You already have Keycloak and it works.
+- Multiple app instances behind a load balancer.
+- High write concurrency (many logins per second).
+- Compliance-heavy environments (SOC2, HIPAA).
 
 ---
 
-## What's inside
-
-- **FastAPI** — async, typed, OpenAPI out of the box.
-- **JWT + HttpOnly cookies** — correct model for web clients, no localStorage.
-- **RBAC** — roles with `is_system`, groups with `access_type`, user↔group links.
-- **Agent identity** — `api_key` per user, Telegram OTP with expiry.
-- **Anti-brute-force** — failed attempt counter, lockout after 5 tries.
-- **Two backends** — SQLite (default) and PostgreSQL (branch).
-
----
-
-## Quick start
+## Quick start (local)
 
 ```bash
-git clone -b sqlite https://github.com/ivatmn/lightweight-auth
+git clone https://github.com/ivatmn/lightweight-auth
 cd lightweight-auth
-docker compose up
+
+python -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+
+cp .env.example .env             # optional — defaults work out of the box
+python main.py

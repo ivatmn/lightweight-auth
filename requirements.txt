@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+python-jose[cryptography]
+aiohttp
+websockets
+bcrypt>=4.1
+httpx
+aiosqlite
