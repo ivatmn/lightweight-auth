@@ -22,14 +22,28 @@ No realms. No admin console you have to learn. No JVM.
 
 ## Choose your backend
 
-Both branches share the same API and architecture. Switch anytime.
+Two backends, **same API, same architecture, same code layout**.
+Pick one, run it, and switch later without rewriting your client code.
 
-| Branch | Use for | Setup |
-|---|---|---|
-| **[`sqlite`](link)** | PoC, internal tools, agent auth, small services | Zero — single file, `docker compose up` |
-| **[`postgres`](link)** | Real workloads, teams, multi-instance, concurrency | `docker compose up` with Postgres service |
+| Backend | Branch | Use for | Setup |
+|---|---|---|---|
+| **SQLite** | [`sqlite`](https://github.com/ivatmn/lightweight-auth/tree/sqlite) | PoC, internal tools, agent auth, small services | Zero — single file, `docker compose up` |
+| **PostgreSQL** | [`postgres`](https://github.com/ivatmn/lightweight-auth/tree/postgres) | Real workloads, teams, multi-instance, concurrency | `docker compose up` with a Postgres service |
 
-**Not sure?** Start with `sqlite`. Migrate to `postgres` when you hit concurrency or multi-instance limits.
+**Branch model**
+
+- `main` — this page. Overview and comparison. No code.
+- `sqlite` — SQLite backend. The recommended starting point.
+- `postgres` — PostgreSQL backend. Same API, same handlers, different storage layer.
+
+**Not sure which one to pick?**
+Start with `sqlite`. Move to `postgres` when you hit write concurrency,
+multiple app instances behind a load balancer, or a team that needs shared storage.
+The API surface does not change — only the storage layer and the connection pool.
+
+**Why branches and not folders?**
+Branches keep each backend's `docker-compose.yml`, dependencies, and migrations
+clean and independent. You clone what you need, not a monorepo with dead code.
 
 ---
 
@@ -61,7 +75,7 @@ Both branches share the same API and architecture. Switch anytime.
 
 ## Quick start
 
-```bash
-git clone -b sqlite https://github.com/ivatmn/lightweight-auth
-cd lightweight-auth
-docker compose up
+### SQLite (recommended for a first run)
+
+
+### Postgresql 
