@@ -19,6 +19,7 @@ SQLite backend — zero setup, single file, no external services.
 - PoC or demo that needs auth *today*.
 - Internal tool with one instance and a handful of users.
 - Agent auth — API keys, OTP, no browser.
+- OTP stored plaintext in SQLite for PoC; hash before production use.
 - You want to read the code, not configure it.
 
 ## When NOT to use this

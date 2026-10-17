@@ -6,3 +6,4 @@ websockets
 bcrypt>=4.1
 httpx
 aiosqlite
+pydantic[email]

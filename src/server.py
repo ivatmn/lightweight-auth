@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from src.api.account_api import router as account_router
 from src.api.login_api import router as auth_router
 from src.core.database import init_db, seed_default_admin
 
@@ -25,4 +26,6 @@ def create_app() -> FastAPI:
         version="D-001.001.00",
     )
     app.include_router(auth_router)
+    app.include_router(account_router)
+
     return app
