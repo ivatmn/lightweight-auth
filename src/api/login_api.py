@@ -22,6 +22,7 @@ from src.core.access import (
     set_auth_cookie,
 )
 from src.core.database import get_db, verify_password
+from src.core.health import check_environment_health
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -141,6 +142,47 @@ async def logout(response: Response) -> None:
 
 
 @router.get("/me")
-async def me(user: dict[str, Any] = Depends(get_current_user)) -> dict[str, Any]:
-    """Return the identity claims from the current JWT."""
-    return user
+async def me(
+    user: dict[str, Any] = Depends(get_current_user),
+    db: aiosqlite.Connection = Depends(get_db),
+) -> dict[str, Any]:
+    """
+    Return identity claims, the user's environment, and its current health status.
+
+    Health is computed on demand with a 1-second timeout.
+    If the environment is inactive (`is_active = 0`) → `down`.
+    """
+    async with db.execute(
+        """
+        SELECT e.id            AS environment_id,
+               e.code          AS environment_code,
+               e.name          AS environment_name,
+               e.frontend_url  AS environment_url,
+               e.health_url    AS environment_health_url,
+               e.is_active     AS environment_is_active
+        FROM users u
+        LEFT JOIN environments e ON e.id = u.environment_id
+        WHERE u.id = ?
+        """,
+        (user["sub"],),
+    ) as cur:
+        row = await cur.fetchone()
+
+    if row is None or row["environment_code"] is None:
+        return {**user, "environment": None}
+
+    status = await check_environment_health(
+        row["environment_health_url"],
+        bool(row["environment_is_active"]),
+    )
+
+    return {
+        **user,
+        "environment": {
+            "code": row["environment_code"],
+            "name": row["environment_name"],
+            "frontend_url": row["environment_url"],
+            "is_active": bool(row["environment_is_active"]),
+            "status": status,
+        },
+    }

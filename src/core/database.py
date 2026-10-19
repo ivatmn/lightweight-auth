@@ -93,47 +93,39 @@ async def init_db() -> None:
 
 
 async def seed_default_admin() -> None:
-    """
-    Seed the admin/user roles and a default admin user if the DB is empty.
-
-    The password is read from AUTH_ADMIN_PASSWORD. Change it in production.
-    """
+    """Create the default admin user if it does not exist."""
     admin_password = os.getenv("AUTH_ADMIN_PASSWORD", "admin")
     admin_username = os.getenv("AUTH_ADMIN_USERNAME", "admin")
+    admin_environment = os.getenv("AUTH_ADMIN_ENVIRONMENT", "sb")
 
     async with open_db() as db:
-        # Roles
-        await db.execute(
-            "INSERT OR IGNORE INTO roles (name, description) VALUES (?, ?)",
-            ("admin", "System administrator"),
-        )
-        await db.execute(
-            "INSERT OR IGNORE INTO roles (name, description) VALUES (?, ?)",
-            ("user", "Regular user"),
-        )
-        await db.commit()
-
-        # Admin user
         async with db.execute(
             "SELECT id FROM users WHERE username = ?", (admin_username,)
         ) as cur:
-            if await cur.fetchone() is None:
-                async with db.execute(
-                    "SELECT id FROM roles WHERE name = 'admin'"
-                ) as cur_role:
-                    role_row = await cur_role.fetchone()
-                    role_id = role_row["id"] if role_row else None
+            if await cur.fetchone() is not None:
+                return
 
-                await db.execute(
-                    """
-                    INSERT INTO users (username, password_hash, role_id, is_active, api_key)
-                    VALUES (?, ?, ?, 1, ?)
-                    """,
-                    (
-                        admin_username,
-                        hash_password(admin_password),
-                        role_id,
-                        None,
-                    ),
-                )
-                await db.commit()
+        async with db.execute("SELECT id FROM roles WHERE name = 'admin'") as cur:
+            role_row = await cur.fetchone()
+            role_id = role_row["id"] if role_row else None
+
+        async with db.execute(
+            "SELECT id FROM environments WHERE code = ?", (admin_environment,)
+        ) as cur:
+            env_row = await cur.fetchone()
+            environment_id = env_row["id"] if env_row else None
+
+        await db.execute(
+            """
+            INSERT INTO users (username, password_hash, role_id, environment_id, is_active, api_key)
+            VALUES (?, ?, ?, ?, 1, ?)
+            """,
+            (
+                admin_username,
+                hash_password(admin_password),
+                role_id,
+                environment_id,
+                None,
+            ),
+        )
+        await db.commit()
